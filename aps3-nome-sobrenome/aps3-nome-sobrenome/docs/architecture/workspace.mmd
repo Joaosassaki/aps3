@@ -1,0 +1,32 @@
+C4Container
+    title Gestao de Estagios UniSenai - Conteineres (C4 Nivel 2) - Candidatura e Termo de Compromisso
+
+    Person(aluno, "Aluno", "Candidata-se a vagas e acompanha o status")
+    Person(coord, "Coordenador Pedagogico", "Homologa convenios e acompanha o estagio")
+    Person(empresa, "Empresa Parceira (RH)", "Publica demandas e assina o termo")
+
+    System_Boundary(sis, "Sistema de Gestao de Aprendizagem e Estagios") {
+        Container(spa, "Aplicacao Web", "React + TypeScript", "Interface dos tres perfis")
+        Container(api, "API de Estagios", "Node.js + NestJS", "CandidaturaService, matching, regras de elegibilidade e maquina de estados do Termo")
+        Container(webhook, "Receptor de Webhooks", "Supabase Edge Function (Deno)", "Recebe eventos de assinatura e valida a origem")
+        ContainerDb(db, "Banco de Dados", "Supabase PostgreSQL 15 + RLS", "alunos, demandas, convenios, candidaturas, termos")
+        Container(auth, "Autenticacao", "Supabase Auth", "Login e emissao de JWT com perfis")
+        Container(storage, "Armazenamento de Arquivos", "Supabase Storage", "PDF do termo assinado")
+    }
+
+    System_Ext(sga, "Sistema Academico (SGA)", "Matricula, situacao e coeficiente (somente leitura)")
+    System_Ext(fiep, "Sistema Fiep", "Dados cadastrais e regularidade das empresas (somente leitura)")
+    System_Ext(assinatura, "Plataforma de Assinatura Eletronica", "Coleta e formaliza as assinaturas do termo")
+
+    Rel(aluno, spa, "Usa", "HTTPS")
+    Rel(coord, spa, "Usa", "HTTPS")
+    Rel(empresa, spa, "Usa", "HTTPS")
+    Rel(spa, auth, "Autentica", "HTTPS / JWT")
+    Rel(spa, api, "Chama operacoes", "HTTPS / REST + JSON")
+    Rel(api, db, "Le e grava", "HTTPS / PostgREST (supabase-js)")
+    Rel(api, storage, "Envia e le PDFs", "HTTPS / S3 API")
+    Rel(api, sga, "Consulta aluno (sincrono)", "HTTPS / REST + JSON")
+    Rel(api, fiep, "Consulta regularidade (sincrono)", "HTTPS / REST + JSON")
+    Rel(api, assinatura, "Solicita assinatura (assincrono)", "HTTPS / REST + JSON")
+    Rel(assinatura, webhook, "Notifica assinatura", "HTTPS / Webhook + HMAC")
+    Rel(webhook, api, "Repassa evento", "HTTPS / REST + JSON")

@@ -1,0 +1,52 @@
+flowchart TB
+    classDef bar fill:#000,stroke:#000,color:#fff
+    classDef decisao fill:#fff7d6,stroke:#b58900,color:#000
+
+    subgraph R1["Raia 1 - Aluno (ator)"]
+        INI(("●"))
+        A1["Seleciona a vaga e solicita candidatura"]
+        A2["Visualiza a rejeicao e o motivo"]
+    end
+
+    subgraph R2["Raia 2 - Sistema Back-End (CandidaturaService)"]
+        S1["Receber solicitacao e carregar DemandaTecnica"]
+        F1["FORK"]:::bar
+        J1["JOIN"]:::bar
+        S2["Validar elegibilidade e vigencia do Convenio"]
+        D1{"Pode se candidatar?"}:::decisao
+        S3["Calcular grau de compatibilidade (PoliticaMatching)"]
+        S4["Confirmar Candidatura e gerar Termo (RASCUNHO)"]
+        S5["Enviar Termo para assinatura (AGUARDANDO_ASSINATURAS)"]
+        D2{"Resultado das assinaturas?"}:::decisao
+        S6["Ativar vigencia do Termo (VIGENTE)"]
+        S7["Notificar aluno e empresa"]
+        S8["Marcar Termo como RECUSADO ou EXPIRADO"]
+        S9["Rejeitar Candidatura e registrar motivo"]
+    end
+
+    subgraph R3["Raia 3 - Servicos Externos"]
+        E1["SGA: consultar matricula e coeficiente"]
+        E2["Fiep: consultar regularidade da empresa"]
+        E3["Plataforma de Assinatura: coletar assinaturas"]
+    end
+
+    subgraph R4["Raia 4 - Coordenador Pedagogico"]
+        C1["Acompanha o estagio e registra ciclos"]
+    end
+
+    FIM(("◉"))
+
+    INI --> A1 --> S1 --> F1
+    F1 --> E1
+    F1 --> E2
+    E1 --> J1
+    E2 --> J1
+    J1 --> S2 --> D1
+    D1 -->|"[elegivel E convenioVigente E empresaRegular]"| S3
+    D1 -->|"[inelegivel OU convenioVencido OU empresaIrregular]"| S9
+    S3 --> S4 --> S5 --> E3 --> D2
+    D2 -->|"[todasAssinaturas]"| S6
+    D2 -->|"[recusada OU prazoVencido]"| S8
+    S6 --> S7 --> C1 --> FIM
+    S8 --> FIM
+    S9 --> A2 --> FIM

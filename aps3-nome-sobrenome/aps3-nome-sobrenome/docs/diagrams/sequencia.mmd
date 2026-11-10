@@ -1,0 +1,56 @@
+sequenceDiagram
+    autonumber
+    actor A as Aluno
+    participant CS as CandidaturaService
+    participant SGA as SistemaAcademicoSGA
+    participant FIEP as SistemaFiep
+    participant DT as DemandaTecnica
+    participant CV as Convenio
+    participant PM as PoliticaMatching
+    participant C as Candidatura
+    participant TC as TermoCompromisso
+    participant CR as CandidaturaRepository
+    participant TR as TermoRepository
+    participant AS as PlataformaAssinatura
+
+    A ->> CS: candidatar(alunoId, demandaId)
+
+    par Consulta academica (SGA)
+        CS ->> SGA: consultarAluno(alunoId)
+        SGA -->> CS: AlunoDTO
+    and Consulta de regularidade (Fiep)
+        CS ->> FIEP: consultarRegularidade(cnpj)
+        FIEP -->> CS: RegularidadeDTO
+    end
+
+    CS ->> DT: validarElegibilidade(aluno: AlunoDTO)
+    DT -->> CS: boolean
+    CS ->> CV: estaVigente()
+    CV -->> CS: boolean
+
+    alt [elegivel E convenioVigente E empresaRegular]
+        CS ->> PM: calcular(perfil: PerfilCompetenciasDTO, demanda: DemandaTecnicaDTO)
+        PM -->> CS: double (grauCompatibilidade)
+        CS ->> C: confirmar()
+        C -->> CS: TermoCompromissoDTO (status RASCUNHO)
+        CS ->> CR: salvar(candidatura: CandidaturaDTO)
+        CR -->> CS: CandidaturaDTO
+        CS ->> TC: enviarParaAssinatura()
+        TC -) AS: solicitarAssinatura(termo: TermoPayloadDTO)
+        Note over TC,AS: Termo passa a AguardandoAssinaturas. A plataforma responde depois, por webhook.
+        CS ->> TR: salvar(termo: TermoCompromissoDTO)
+        TR -->> CS: TermoCompromissoDTO
+        CS -->> A: CandidaturaDTO (status AGUARDANDO_ASSINATURAS)
+
+        loop ate todas as partes assinarem
+            AS -) CS: receberEventoAssinatura(evento: AssinaturaEventoDTO)
+            CS ->> TC: registrarAssinatura(evento: AssinaturaEventoDTO)
+            TC -->> CS: TermoCompromissoDTO
+            CS ->> TR: salvar(termo: TermoCompromissoDTO)
+            TR -->> CS: TermoCompromissoDTO
+        end
+
+        CS -) A: notificar(NotificacaoDTO: termo vigente)
+    else [inelegivel OU convenioVencido OU empresaIrregular]
+        CS -->> A: CandidaturaRejeitadaDTO (motivo)
+    end

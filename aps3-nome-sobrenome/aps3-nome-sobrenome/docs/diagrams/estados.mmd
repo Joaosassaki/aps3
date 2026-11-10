@@ -1,0 +1,25 @@
+stateDiagram-v2
+    direction LR
+
+    [*] --> Rascunho : candidaturaConfirmada / criarTermo()
+    Rascunho --> AguardandoAssinaturas : enviarParaAssinatura [convenioVigente] / solicitarAssinatura()
+
+    state AguardandoAssinaturas {
+        [*] --> SemAssinaturas
+        SemAssinaturas --> ParcialmenteAssinado : assinaturaRecebida [faltamPartes] / registrarAssinatura()
+        ParcialmenteAssinado --> ParcialmenteAssinado : assinaturaRecebida [faltamPartes] / registrarAssinatura()
+    }
+
+    AguardandoAssinaturas --> Vigente : assinaturaRecebida [todasAssinaturas] / ativarVigencia()
+    AguardandoAssinaturas --> Recusado : assinaturaRecusada / notificarPartes()
+    AguardandoAssinaturas --> Expirado : prazoExpirado [prazoVencido] / cancelarSolicitacao()
+    Vigente --> Encerrado : fimVigencia [vigenciaFimAtingida] / encerrar()
+
+    Recusado --> [*]
+    Expirado --> [*]
+    Encerrado --> [*]
+
+    Rascunho : entry / gerarNumero()
+    Vigente : entry / registrarInicioVigencia()
+    Vigente : do / monitorarVigencia()
+    Vigente : exit / notificarEncerramento()
