@@ -1,7 +1,9 @@
 # APS 3 — Dossiê de Arquitetura Viva
 
 **Unidade Curricular:** Modelagem de Software — Engenharia de Software (4º período, UniSenai)
+
 **Projeto da equipe:** Pirataria Senai
+
 **Autor:** João Pedro S. C. Lopes
 
 ## 1. Funcionalidade crítica modelada
